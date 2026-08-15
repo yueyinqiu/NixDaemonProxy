@@ -42,6 +42,7 @@ public partial class HttpCommand : ICommand
         );
         using var client = UnixSocketHttpClient.Create(this.ControlSocket);
         var response = await client.PostAsJsonAsync("switch", proxy);
+        response.EnsureSuccessStatusCode();
         Console.WriteLine(response.StatusCode);
     }
 }

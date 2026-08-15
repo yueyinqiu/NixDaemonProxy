@@ -6,6 +6,17 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-server",
+            "args": [
+                "--control-socket",
+                "/tmp/ndp-test.sock",
+                "--control-group",
+                "users",
+                "--proxy-password",
+                "testpass123",
+                "--proxy-port",
+                "20080",
+                "--nix-daemon-service"
+            ],
             "program": "${workspaceFolder}/src/NixDaemonProxy.Server/bin/Debug/net10.0/NixDaemonProxy.Server.dll",
             "cwd": "${workspaceFolder}/src/NixDaemonProxy.Server/bin/Debug/net10.0",
             "console": "integratedTerminal"
@@ -15,6 +26,15 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-client",
+            "args": [
+                "switch",
+                "--host-name",
+                "proxy.example.com",
+                "--port",
+                "8080",
+                "--control-socket",
+                "/tmp/ndp-test.sock"
+            ],
             "program": "${workspaceFolder}/src/NixDaemonProxy.Client/bin/Debug/net10.0/NixDaemonProxy.Client.dll",
             "cwd": "${workspaceFolder}/src/NixDaemonProxy.Client/bin/Debug/net10.0",
             "console": "integratedTerminal"

@@ -8,7 +8,7 @@ static class UnixSocketHttpClient
         {
             ConnectCallback = async (_, cancellationToken) =>
             {
-                var s = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
+                var s = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
                 var endpoint = new UnixDomainSocketEndPoint(socket);
                 await s.ConnectAsync(endpoint, cancellationToken);
                 return new NetworkStream(s, ownsSocket: true);
