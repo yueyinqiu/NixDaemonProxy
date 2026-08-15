@@ -10,15 +10,15 @@ namespace NixDaemonProxy.Client;
 [Command("from-json")]
 partial class FromJsonCommand : ICommand
 {
-    [CommandOption("json", 'j')]
-    public required string Json { get; set; }
-
     [CommandOption("control-socket")]
     public string ControlSocket { get; set; } = "/run/nix-daemon-proxy.sock";
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
-        var proxy = JsonSerializer.Deserialize(this.Json, ProxyJsonSerializerContext.Default.Proxy);
+        var proxy = await JsonSerializer.DeserializeAsync(
+            console.Input.BaseStream,
+            ProxyJsonSerializerContext.Default.Proxy
+        );
         using var client = UnixSocketHttpClient.Create(this.ControlSocket);
         var response = await client.PostAsJsonAsync("switch", proxy, ProxyJsonSerializerContext.Default.Proxy);
         response.EnsureSuccessStatusCode();

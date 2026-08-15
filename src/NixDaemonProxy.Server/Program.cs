@@ -24,7 +24,7 @@ public partial class Program : ICommand
     [CommandOption("control-group")]
     public string ControlGroup { get; set; } = "nix-daemon-proxy";
 
-    [CommandOption("proxy-password")]
+    [CommandOption("proxy-password", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_SECRET_ARGUMENTS_PROXY_PASSWORD")]
     public string? ProxyPassword { get; set; } = null;
 
     [CommandOption("proxy-port")]

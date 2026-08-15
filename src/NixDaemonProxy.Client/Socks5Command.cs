@@ -19,7 +19,7 @@ partial class Socks5Command : ICommand
     [CommandOption("user-name", 'u')]
     public string? UserName { get; set; } = null;
 
-    [CommandOption("password", 'p')]
+    [CommandOption("password", 'p', EnvironmentVariable = "NIX_DAEMON_PROXY_CLIENT_SECRET_ARGUMENTS_PASSWORD")]
     public string? Password { get; set; } = null;
 
     [CommandOption("proxy-dns-requests")]

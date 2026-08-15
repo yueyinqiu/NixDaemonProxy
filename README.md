@@ -45,7 +45,7 @@ This means you can switch between a VPN, a public proxy, or "direct" as often as
 Add the server to your NixOS configuration (e.g. in `configuration.nix` or a NixOS module):
 
 ```nix
-{ nur, ... }:
+{ nur, pkgs, ... }:
 {
   # users in nix-daemon-proxy group will be able to access the service
   users.groups.nix-daemon-proxy = { };
@@ -58,9 +58,15 @@ Add the server to your NixOS configuration (e.g. in `configuration.nix` or a Nix
       Restart = "on-failure";
       RestartSec = "5s";
 
-      # asp.net will try to find/watch the configuration files.
-      # so don't forget to change its working directory,
-      # otherwise it will search your full /nix/store...
+      # kestrel deletes the socket file on clean shutdown, but if the
+      # process is killed (crash, OOM, ...) the stale socket remains and
+      # blocks the next start with "address already in use".
+      # clean it up before each start.
+      ExecStartPre = "${pkgs.coreutils}/bin/rm -f /run/nix-daemon-proxy.sock";
+
+      # asp.net scans (and watches) the working directory for configuration
+      # files, so point it somewhere harmless like /tmp instead of letting
+      # it walk your whole /nix/store.
       PrivateTmp = true;
       WorkingDirectory = "/tmp";
     };
@@ -93,7 +99,7 @@ The server binary accepts a few options (defaults shown):
 | ------------------- | -------------------------- | ---------------------------------------------------------- |
 | `--control-socket`  | `/run/nix-daemon-proxy.sock` | Unix socket path the control HTTP server listens on       |
 | `--control-group`   | `nix-daemon-proxy`         | Group that gets read/write access to the control socket    |
-| `--proxy-password`  | *(random, generated)*      | Basic-auth password for the local proxy. Random per boot by default; set it explicitly to keep it stable |
+| `--proxy-password`  | *(random, generated)*      | Basic-auth password for the local proxy. Random per boot by default; set it explicitly to keep it stable. Can also be supplied via the `NIX_DAEMON_PROXY_SERVER_SECRET_ARGUMENTS_PROXY_PASSWORD` environment variable |
 | `--proxy-port`      | `0` *(random)*             | TCP port the local proxy listens on (`127.0.0.1`)          |
 | `--nix-daemon-service` | `nix-daemon`             | Name of the systemd service to configure. Pass empty (`--nix-daemon-service ""`) to disable daemon configuration |
 
@@ -111,6 +117,15 @@ The server binary accepts a few options (defaults shown):
 ## Usage
 
 The client talks to the server over the control socket, so **you must be a member of the `nix-daemon-proxy` group** to use it.
+
+> **Security:** never pass a password on the command line. Options like `-p` show up in `ps` and are visible to any local user. Use the `NIX_DAEMON_PROXY_CLIENT_SECRET_ARGUMENTS_PASSWORD` environment variable instead — the command line takes precedence if both are set:
+>
+> ```sh
+> export NIX_DAEMON_PROXY_CLIENT_SECRET_ARGUMENTS_PASSWORD=secret
+> NixDaemonProxy.Client http -H 127.0.0.1 -P 7890 -u user
+> ```
+>
+> `from-json` reads its JSON from stdin, so it is safe to put passwords there.
 
 ### Switch to an HTTP proxy
 
@@ -132,28 +147,30 @@ NixDaemonProxy.Client direct
 
 ### Advanced usage
 
-Use `from-json` for full control — e.g. chaining two proxies (`nextHop`), or setting DNS proxy / localhost-bypass flags:
+Use `from-json` for full control — e.g. chaining two proxies (`nextHop`), or setting DNS proxy / localhost-bypass flags. The JSON is read from **stdin** (not the command line), so passwords inside it never show up in `ps`:
 
 ```sh
-NixDaemonProxy.Client from-json -j '{
-  "proxyType": "Socks5",
-  "hostName": "192.168.1.2",
-  "port": 1080,
-  "userName": null,
-  "password": null,
-  "proxyDnsRequests": true,
-  "bypassLocalhost": false,
-  "nextHop": {
-    "proxyType": "Http",
-    "hostName": "192.168.1.3",
-    "port": 7890,
-    "userName": "user",
-    "password": "secret",
-    "proxyDnsRequests": true,
-    "bypassLocalhost": true,
-    "nextHop": null
+NixDaemonProxy.Client from-json <<'EOF'
+{
+  "ProxyType": "Socks5",
+  "HostName": "192.168.1.2",
+  "Port": 1080,
+  "UserName": null,
+  "Password": null,
+  "ProxyDnsRequests": true,
+  "BypassLocalhost": false,
+  "NextHop": {
+    "ProxyType": "Http",
+    "HostName": "192.168.1.3",
+    "Port": 7890,
+    "UserName": "user",
+    "Password": "secret",
+    "ProxyDnsRequests": true,
+    "BypassLocalhost": true,
+    "NextHop": null
   }
-}'
+}
+EOF
 ```
 
 ### Client command reference
@@ -163,13 +180,14 @@ NixDaemonProxy.Client from-json -j '{
 | `http` | `-H <host>`, `-P <port>`, `-u <user>`, `-p <password>`, `--[no-]proxy-dns-requests`, `--bypass-localhost`, `--control-socket <path>` | Use an HTTP(S) proxy upstream |
 | `socks5` | same as `http` | Use a SOCKS5 proxy upstream |
 | `direct` | `--control-socket <path>` | Remove the upstream proxy (go direct) |
-| `from-json` | `-j <json>`, `--control-socket <path>` | Set the upstream from a JSON `Proxy` record (supports `nextHop` chains) |
+| `from-json` | `--control-socket <path>` | Read a JSON `Proxy` record from stdin and set it as the upstream (supports `nextHop` chains) |
 
 Shared options:
 
 - `--host-name` / `-H`: upstream proxy host.
 - `--port` / `-P`: upstream proxy port.
-- `--user-name` / `-u`, `--password` / `-p`: upstream proxy credentials (optional).
+- `--user-name` / `-u`: upstream proxy username (optional).
+- `--password` / `-p`: upstream proxy password (optional). Can also be supplied via the `NIX_DAEMON_PROXY_CLIENT_SECRET_ARGUMENTS_PASSWORD` environment variable; the command line takes precedence.
 - `--proxy-dns-requests` (default `true`): let the proxy resolve DNS instead of the local machine.
 - `--bypass-localhost` (default `false`): do not proxy requests to localhost.
 - `--control-socket` (default `/run/nix-daemon-proxy.sock`): path of the server's control socket, in case it was changed.
@@ -178,7 +196,7 @@ Shared options:
 
 - The local proxy is bound to `127.0.0.1` and protected by Basic auth, but only the server knows the (random) password.
 - Access to the control socket is restricted to the `nix-daemon-proxy` group, so only members can switch the proxy.
-- The proxy password is passed in the daemon's environment and in the drop-in file; consider setting a fixed `--proxy-password` if you need a stable value across restarts.
+- The proxy password is passed in the daemon's environment and in the drop-in file; consider setting a fixed `--proxy-password` (or the `NIX_DAEMON_PROXY_SERVER_SECRET_ARGUMENTS_PROXY_PASSWORD` environment variable) if you need a stable value across restarts.
 
 ## Building from source
 
