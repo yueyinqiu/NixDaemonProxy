@@ -3,13 +3,12 @@ using System.Text.Json;
 using CliFx;
 using CliFx.Binding;
 using CliFx.Infrastructure;
-using NixDaemonProxy.Interface;
 
 namespace NixDaemonProxy.Client;
 
 
 [Command("from-json")]
-public partial class FromJsonCommand : ICommand
+partial class FromJsonCommand : ICommand
 {
     [CommandOption("json", 'j')]
     public required string Json { get; set; }
@@ -19,9 +18,9 @@ public partial class FromJsonCommand : ICommand
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
-        var proxy = JsonSerializer.Deserialize<Proxy?>(this.Json);
+        var proxy = JsonSerializer.Deserialize(this.Json, ProxyJsonSerializerContext.Default.Proxy);
         using var client = UnixSocketHttpClient.Create(this.ControlSocket);
-        var response = await client.PostAsJsonAsync("switch", proxy);
+        var response = await client.PostAsJsonAsync("switch", proxy, ProxyJsonSerializerContext.Default.Proxy);
         response.EnsureSuccessStatusCode();
         console.WriteLine(response.StatusCode);
     }

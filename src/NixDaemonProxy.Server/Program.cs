@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text.Json.Serialization.Metadata;
 using CliFx;
 using CliFx.Binding;
 using CliFx.Infrastructure;
@@ -45,6 +46,12 @@ public partial class Program : ICommand
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.ListenUnixSocket(this.ControlSocket);
+        });
+        builder.Services.ConfigureHttpJsonOptions(x =>
+        {
+            x.SerializerOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                ProxyJsonSerializerContext.Default
+            );
         });
         var app = builder.Build();
 

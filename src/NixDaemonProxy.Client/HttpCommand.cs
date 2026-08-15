@@ -8,7 +8,7 @@ namespace NixDaemonProxy.Client;
 
 
 [Command("http")]
-public partial class HttpCommand : ICommand
+partial class HttpCommand : ICommand
 {
     [CommandOption("host-name", 'H')]
     public required string HostName { get; set; }
@@ -40,7 +40,7 @@ public partial class HttpCommand : ICommand
             this.ProxyDnsRequests, this.BypassLocalhost, null
         );
         using var client = UnixSocketHttpClient.Create(this.ControlSocket);
-        var response = await client.PostAsJsonAsync("switch", proxy);
+        var response = await client.PostAsJsonAsync("switch", proxy, ProxyJsonSerializerContext.Default.Proxy);
         response.EnsureSuccessStatusCode();
         console.WriteLine(response.StatusCode);
     }
