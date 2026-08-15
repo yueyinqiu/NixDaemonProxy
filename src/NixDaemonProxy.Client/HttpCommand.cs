@@ -2,13 +2,12 @@
 using CliFx;
 using CliFx.Binding;
 using CliFx.Infrastructure;
-using CliWrap;
 using NixDaemonProxy.Interface;
 
-namespace NixDaemonProxy.Server;
+namespace NixDaemonProxy.Client;
 
 
-[Command("switch")]
+[Command("http")]
 public partial class HttpCommand : ICommand
 {
     [CommandOption("host-name", 'H')]
@@ -43,6 +42,6 @@ public partial class HttpCommand : ICommand
         using var client = UnixSocketHttpClient.Create(this.ControlSocket);
         var response = await client.PostAsJsonAsync("switch", proxy);
         response.EnsureSuccessStatusCode();
-        Console.WriteLine(response.StatusCode);
+        console.WriteLine(response.StatusCode);
     }
 }

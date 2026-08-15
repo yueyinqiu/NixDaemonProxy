@@ -48,9 +48,9 @@ public partial class Program : ICommand
         });
         var app = builder.Build();
 
-        app.MapPost("/switch", async ([FromBody] Proxy proxy) =>
+        app.MapPost("/switch", async ([FromBody] Proxy? proxy) =>
         {
-            var externalProxy = proxy.ToExternalProxy();
+            var externalProxy = proxy?.ToExternalProxy();
             proxyServer.UpStreamHttpProxy = externalProxy;
             proxyServer.UpStreamHttpsProxy = externalProxy;
         });

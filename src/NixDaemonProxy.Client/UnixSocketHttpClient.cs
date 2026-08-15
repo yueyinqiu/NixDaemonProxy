@@ -1,5 +1,7 @@
 using System.Net.Sockets;
 
+namespace NixDaemonProxy.Client;
+
 static class UnixSocketHttpClient
 {
     public static HttpClient Create(string socket)
