@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NixDaemonProxy.Client/NixDaemonProxy.Client.csproj" />
+    <Project Path="src/NixDaemonProxy.Interface/NixDaemonProxy.Interface.csproj" />
+    <Project Path="src/NixDaemonProxy.Server/NixDaemonProxy.Server.csproj" />
+  </Folder>
+</Solution>

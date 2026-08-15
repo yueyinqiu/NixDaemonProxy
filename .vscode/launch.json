@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C#: NixDaemonProxy.Server",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/NixDaemonProxy.Server/bin/Debug/net10.0/NixDaemonProxy.Server.dll",
+            "cwd": "${workspaceFolder}/src/NixDaemonProxy.Server/bin/Debug/net10.0",
+            "console": "integratedTerminal"
+        }
+    ]
+}
