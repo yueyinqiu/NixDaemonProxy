@@ -5,9 +5,18 @@
             "name": "C#: NixDaemonProxy.Server",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "build-server",
             "program": "${workspaceFolder}/src/NixDaemonProxy.Server/bin/Debug/net10.0/NixDaemonProxy.Server.dll",
             "cwd": "${workspaceFolder}/src/NixDaemonProxy.Server/bin/Debug/net10.0",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "C#: NixDaemonProxy.Client",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-client",
+            "program": "${workspaceFolder}/src/NixDaemonProxy.Client/bin/Debug/net10.0/NixDaemonProxy.Client.dll",
+            "cwd": "${workspaceFolder}/src/NixDaemonProxy.Client/bin/Debug/net10.0",
             "console": "integratedTerminal"
         }
     ]

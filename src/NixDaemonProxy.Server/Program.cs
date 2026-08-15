@@ -23,6 +23,9 @@ public partial class Program : ICommand
     [CommandOption("control-group")]
     public string ControlGroup { get; set; } = "nix-daemon-proxy";
 
+    [CommandOption("proxy-password")]
+    public string? ProxyPassword { get; set; } = null;
+
     [CommandOption("proxy-port")]
     public int ProxyPort { get; set; } = 0;
 
@@ -31,7 +34,7 @@ public partial class Program : ICommand
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
-        var password = Guid.NewGuid().ToString("N");
+        var password = this.ProxyPassword ?? Guid.NewGuid().ToString("N");
 
         using var proxyServer = new ProxyServer(false);
         proxyServer.AddEndPoint(new ExplicitProxyEndPoint(new IPAddress([127, 0, 0, 1]), this.ProxyPort, false));
