@@ -192,6 +192,19 @@ Shared options:
 - `--bypass-localhost` (default `false`): do not proxy requests to localhost.
 - `--control-socket` (default `/run/nix-daemon-proxy.sock`): path of the server's control socket, in case it was changed.
 
+## Rescue: proxy switched but not working
+
+This should be next to impossible, but just in case: the switch to the proxy succeeded (`nix-daemon` restarted with the proxy env vars), but then the server crashed — and keeps crashing on restart. The control socket is gone, and `nix-daemon` is pointed at a dead proxy, so you can't even rebuild NixOS.
+
+Don't worry. The proxy only reaches `nix-daemon` through a runtime systemd **drop-in**, so remove it as root and restart the daemon will save you:
+
+```sh
+sudo systemctl stop nix-daemon-proxy-server
+sudo rm /run/systemd/system/nix-daemon.service.d/nix-daemon-proxy-02f2de3ae7134c999a969d2b8f6f2f46.conf
+sudo systemctl daemon-reload
+sudo systemctl restart nix-daemon
+```
+
 ## Security notes
 
 - The local proxy is bound to `127.0.0.1` and protected by Basic auth, but only the server knows the (random) password.
