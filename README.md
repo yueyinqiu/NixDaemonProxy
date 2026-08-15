@@ -9,7 +9,7 @@ Switch the proxy used by the **Nix daemon** (`nix-daemon`) on the fly, without r
 - Every switch (different proxy, different credentials, back to direct) would mean editing the config, rebuilding, and probably rebooting.
 - A proxy is often **personal and private** (e.g. your own Clash/V2Ray with credentials), while the NixOS config is usually shared and admin-maintained — private details don't belong there.
 
-So the NixOS side stays proxy-free and just runs the local proxy server. *Which* upstream to use is decided at runtime by any user in the `nix-daemon-proxy` group — this is how the author runs it: no proxy at the root level at all, just a user-space one the daemon is switched to point at.
+So the NixOS side stays proxy-free and just runs the local proxy server. *Which* upstream to use is decided at runtime by any user in the `nix-daemon-proxy` group.
 
 > **Caveat:** the *setting* is per-user, but the *effect* is global — there's only one `nix-daemon` per machine. While your proxy is active, other users building with that daemon go through it too. Unavoidable with a single shared daemon.
 
@@ -147,7 +147,7 @@ NixDaemonProxy.Client direct
 
 ### Advanced usage
 
-Use `from-json` for full control — e.g. chaining two proxies (`nextHop`), or setting DNS proxy / localhost-bypass flags. The JSON is read from **stdin** (not the command line), so passwords inside it never show up in `ps`:
+Use `from-json` for full control — e.g. chaining two proxies (`NextHop`), or setting DNS proxy / localhost-bypass flags. It maps to the `Proxy` record in [`src/NixDaemonProxy.Interface/Proxy.cs`](src/NixDaemonProxy.Interface/Proxy.cs), with `ProxyType` being one of `Http`, `Socks4` or `Socks5`:
 
 ```sh
 NixDaemonProxy.Client from-json <<'EOF'
@@ -180,7 +180,7 @@ EOF
 | `http` | `-H <host>`, `-P <port>`, `-u <user>`, `-p <password>`, `--[no-]proxy-dns-requests`, `--bypass-localhost`, `--control-socket <path>` | Use an HTTP(S) proxy upstream |
 | `socks5` | same as `http` | Use a SOCKS5 proxy upstream |
 | `direct` | `--control-socket <path>` | Remove the upstream proxy (go direct) |
-| `from-json` | `--control-socket <path>` | Read a JSON `Proxy` record from stdin and set it as the upstream (supports `nextHop` chains) |
+| `from-json` | `--control-socket <path>` | Read a JSON `Proxy` record from stdin and set it as the upstream (supports `NextHop` chains) |
 
 Shared options:
 
@@ -196,7 +196,6 @@ Shared options:
 
 - The local proxy is bound to `127.0.0.1` and protected by Basic auth, but only the server knows the (random) password.
 - Access to the control socket is restricted to the `nix-daemon-proxy` group, so only members can switch the proxy.
-- The proxy password is passed in the daemon's environment and in the drop-in file; consider setting a fixed `--proxy-password` (or the `NIX_DAEMON_PROXY_SERVER_SECRET_ARGUMENTS_PROXY_PASSWORD` environment variable) if you need a stable value across restarts.
 
 ## Building from source
 
