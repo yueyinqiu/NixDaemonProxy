@@ -22,16 +22,30 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "C#: NixDaemonProxy.Client",
+            "name": "C#: NixDaemonProxy.Client (Http)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-client",
             "args": [
-                "switch",
+                "http",
                 "--host-name",
                 "proxy.example.com",
                 "--port",
                 "8080",
+                "--control-socket",
+                "/tmp/ndp-test.sock"
+            ],
+            "program": "${workspaceFolder}/src/NixDaemonProxy.Client/bin/Debug/net10.0/NixDaemonProxy.Client.dll",
+            "cwd": "${workspaceFolder}/src/NixDaemonProxy.Client/bin/Debug/net10.0",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "C#: NixDaemonProxy.Client (Direct)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-client",
+            "args": [
+                "direct",
                 "--control-socket",
                 "/tmp/ndp-test.sock"
             ],
