@@ -15,12 +15,8 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          client = import ./nix/client {
-            inherit (pkgs) lib buildDotnetModule fetchFromGitHub dotnetCorePackages;
-          };
-          server = import ./nix/server {
-            inherit (pkgs) lib buildDotnetModule fetchFromGitHub dotnetCorePackages;
-          };
+          nix-daemon-proxy-client = pkgs.callPackage ./nix/client;
+          nix-daemon-proxy-server = pkgs.callPackage ./nix/server;
         }
       );
 
