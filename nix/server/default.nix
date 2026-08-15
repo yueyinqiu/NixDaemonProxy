@@ -26,7 +26,7 @@ buildDotnetModule (finalAttrs: {
   __structuredAttrs = true;
 
   meta = {
-    description = "Server for the Nix daemon proxy";
+    description = "An on-the-fly switchable HTTP/HTTPS/SOCKS5 proxy for the Nix daemon";
     homepage = "https://github.com/yueyinqiu/NixDaemonProxy";
     license = lib.licenses.mit;
     mainProgram = "NixDaemonProxy.Server";
