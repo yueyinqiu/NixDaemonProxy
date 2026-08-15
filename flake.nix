@@ -15,8 +15,8 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          nix-daemon-proxy-client = pkgs.callPackage ./nix/client;
-          nix-daemon-proxy-server = pkgs.callPackage ./nix/server;
+          nix-daemon-proxy-client = pkgs.callPackage ./nix/client { };
+          nix-daemon-proxy-server = pkgs.callPackage ./nix/server { };
         }
       );
 
