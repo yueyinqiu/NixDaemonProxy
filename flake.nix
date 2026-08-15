@@ -9,9 +9,20 @@
       forAllSystems = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
     in
     {
-      packages = forAllSystems (system: {
-        default = nixpkgs.legacyPackages.${system}.callPackage ./nix { };
-      });
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          client = import ./nix/client {
+            inherit (pkgs) lib buildDotnetModule fetchFromGitHub dotnetCorePackages;
+          };
+          server = import ./nix/server {
+            inherit (pkgs) lib buildDotnetModule fetchFromGitHub dotnetCorePackages;
+          };
+        }
+      );
 
       devShells = forAllSystems (
         system:
