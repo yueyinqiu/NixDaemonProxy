@@ -29,6 +29,14 @@
           default = pkgs.mkShell {
             packages = [
               pkgs.dotnetCorePackages.sdk_10_0
+              (pkgs.writeShellScriptBin "dev-publish-server" ''
+                set -euo pipefail
+                mkdir -p publish
+                temp=$(mktemp -d -p publish)
+
+                dotnet publish src/NixDaemonProxy.Server/NixDaemonProxy.Server.csproj -c Release -o "$temp/NixDaemonProxy.Server"
+                ouch compress "$temp/NixDaemonProxy.Server"/* "$temp/NixDaemonProxy.Server.zip"
+              '')
             ];
             shellHook = ''
               export DOTNET_ROOT="${pkgs.dotnetCorePackages.sdk_10_0}/share/dotnet"
