@@ -63,12 +63,6 @@ Add the server to your NixOS configuration (e.g. in `configuration.nix` or a Nix
       # blocks the next start with "address already in use".
       # clean it up before each start.
       ExecStartPre = "${pkgs.coreutils}/bin/rm -f /run/nix-daemon-proxy.sock";
-
-      # asp.net scans (and watches) the working directory for configuration
-      # files, so point it somewhere harmless like /tmp instead of letting
-      # it walk your whole /nix/store.
-      PrivateTmp = true;
-      WorkingDirectory = "/tmp";
     };
   };
 }

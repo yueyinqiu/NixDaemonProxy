@@ -42,11 +42,13 @@ public partial class Program : ICommand
         proxyServer.ProxyBasicAuthenticateFunc = async (_, _, x) => x == password;
         proxyServer.Start(false);
 
-        var builder = WebApplication.CreateBuilder();
+        var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions());
+        builder.WebHost.UseKestrel();
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.ListenUnixSocket(this.ControlSocket);
         });
+        builder.Services.AddRouting();
         builder.Services.ConfigureHttpJsonOptions(x =>
         {
             x.SerializerOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
