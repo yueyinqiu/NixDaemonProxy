@@ -40,7 +40,7 @@ The flow is:
 
 This means you can switch between a VPN, a public proxy, or "direct" as often as you like — no rebuild, no reboot, no manual file editing.
 
-## Server setup (NixOS)
+## Server setup
 
 Add the server to your NixOS configuration (e.g. in `configuration.nix` or a NixOS module):
 
@@ -83,7 +83,8 @@ Here `nur` is `github:nix-community/NUR#legacyPackages.<your-system>.repos`.
 > }
 > ```
 
-> If you don't use NixOS, just create the `nix-daemon-proxy` group and run the server as root. Take Ubuntu as an example:
+If you don't use NixOS, just create the `nix-daemon-proxy` group and run the server as root. Take Ubuntu as an example:
+
 > ```
 > sudo apt-get update
 > sudo apt-get install -y dotnet-sdk-10.0 wget unzip
