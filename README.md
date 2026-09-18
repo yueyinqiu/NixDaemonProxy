@@ -95,7 +95,7 @@ The server binary accepts a few options (defaults shown):
 | `--control-group`   | `nix-daemon-proxy`         | Group that gets read/write access to the control socket    |
 | `--proxy-password`  | *(random, generated)*      | Basic-auth password for the local proxy. Random per boot by default; set it explicitly to keep it stable. Can also be supplied via the `NIX_DAEMON_PROXY_SERVER_SECRET_ARGUMENTS_PROXY_PASSWORD` environment variable |
 | `--proxy-port`      | `0` *(random)*             | TCP port the local proxy listens on (`127.0.0.1`)          |
-| `--nix-daemon-service` | `nix-daemon`             | Name of the systemd service to configure. Pass empty (`--nix-daemon-service ""`) to disable daemon configuration |
+| `--nix-daemon-service` | `nix-daemon`             | Name of the systemd service to configure. Pass the flag without a value (`--nix-daemon-service`) to disable daemon configuration |
 
 ## Client setup
 
