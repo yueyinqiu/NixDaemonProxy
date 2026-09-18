@@ -40,37 +40,39 @@ The flow is:
 
 This means you can switch between a VPN, a public proxy, or "direct" as often as you like — no rebuild, no reboot, no manual file editing.
 
-## Server setup
+## Installation
 
-Add the server to your NixOS configuration (e.g. in `configuration.nix` or a NixOS module):
+### NixOS
+
+Nix packaging lives in the separate [`NixDaemonProxy-Nix`](https://github.com/yueyinqiu/NixDaemonProxy-Nix) repository, which exposes packages and a NixOS module. Add it as a flake input and enable the module:
 
 ```nix
-{ nur, pkgs, ... }:
 {
-  # users in nix-daemon-proxy group will be able to access the service
-  users.groups.nix-daemon-proxy = { };
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nix-daemon-proxy.url = "github:yueyinqiu/NixDaemonProxy-Nix";
+  };
 
-  systemd.services.nix-daemon-proxy-server = {
-    wantedBy = [ "multi-user.target" ];
+  outputs = { nixpkgs, nix-daemon-proxy, ... }: {
+    nixosConfigurations.your-host = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        nix-daemon-proxy.nixosModules.nix-daemon-proxy
+        {
+          services.nix-daemon-proxy.enable = true;
 
-    serviceConfig = {
-      ExecStart = "${nur.yueyinqiu.nix-daemon-proxy-server}/bin/NixDaemonProxy.Server";
-      Restart = "on-failure";
-      RestartSec = "5s";
-
-      # kestrel deletes the socket file on clean shutdown, but if the
-      # process is killed (crash, OOM, ...) the stale socket remains and
-      # blocks the next start with "address already in use".
-      # clean it up before each start.
-      ExecStartPre = "${pkgs.coreutils}/bin/rm -f /run/nix-daemon-proxy.sock";
+          # optional: also install a wrapped client on the system PATH
+          services.nix-daemon-proxy.installClient = true;
+        }
+      ];
     };
   };
 }
 ```
 
-Here `nur` is `github:nix-community/NUR#legacyPackages.<your-system>.repos`.
+The module runs the server as a `systemd` service (`nix-daemon-proxy-server`) and creates the `nix-daemon-proxy` group.
 
-> You could use my cachix to avoid building it from source:
+> To avoid building from source, you can use the `yueyinqiu` Cachix binary cache:
 >
 > ```nix
 > {
@@ -83,40 +85,58 @@ Here `nur` is `github:nix-community/NUR#legacyPackages.<your-system>.repos`.
 > }
 > ```
 
+#### Module options
+
+Options under `services.nix-daemon-proxy`:
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enable` | bool | `false` | Whether to enable NixDaemonProxy |
+| `package` | package | the flake's `nix-daemon-proxy-server` | The server package to run |
+| `installClient` | bool | `false` | Also install a wrapped client into `environment.systemPackages` |
+| `group` | str | `"nix-daemon-proxy"` | Group whose members can access the control socket |
+| `controlSocket` | str | `"/run/nix-daemon-proxy.sock"` | Unix socket path the control server listens on |
+| `proxyPort` | nullOr port | `null` | TCP port the local proxy listens on (`127.0.0.1`); random when `null` |
+| `nixDaemonService` | nullOr str | `"nix-daemon"` | systemd service to configure; `null` disables daemon configuration |
+
+The proxy password is always generated randomly per boot by the server.
+
+### Other distributions
+
 If you don't use NixOS, just create the `nix-daemon-proxy` group and run the server as root. Take Ubuntu as an example:
 
-> ```
-> sudo apt-get update
-> sudo apt-get install -y dotnet-sdk-10.0 wget unzip
->
-> wget -O /tmp/NixDaemonProxy.Server.zip https://github.com/yueyinqiu/NixDaemonProxy/releases/latest/download/NixDaemonProxy.Server.zip
-> sudo mkdir -p /opt/nix-daemon-proxy
-> sudo unzip /tmp/NixDaemonProxy.Server.zip -d /opt/nix-daemon-proxy
-> rm /tmp/NixDaemonProxy.Server.zip
->
-> sudo groupadd -f nix-daemon-proxy
-> 
-> sudo tee /etc/systemd/system/nix-daemon-proxy-server.service > /dev/null << 'EOF'
-> [Unit]
-> Description=Nix Daemon Proxy Server
-> 
-> [Service]
-> ExecStart=/usr/bin/dotnet /opt/nix-daemon-proxy/NixDaemonProxy.Server.dll
-> Restart=on-failure
-> RestartSec=5s
-> ExecStartPre=/bin/rm -f /run/nix-daemon-proxy.sock
-> 
-> [Install]
-> WantedBy=multi-user.target
-> EOF
->
-> sudo systemctl daemon-reload
-> sudo systemctl enable --now nix-daemon-proxy-server
->
-> sudo usermod -aG nix-daemon-proxy <trusted-users>    # won't take effect in current login session.
-> ```
+```console
+sudo apt-get update
+sudo apt-get install -y dotnet-sdk-10.0 wget unzip
 
-### Server options
+wget -O /tmp/NixDaemonProxy.Server.zip https://github.com/yueyinqiu/NixDaemonProxy/releases/latest/download/NixDaemonProxy.Server.zip
+sudo mkdir -p /opt/nix-daemon-proxy
+sudo unzip /tmp/NixDaemonProxy.Server.zip -d /opt/nix-daemon-proxy
+rm /tmp/NixDaemonProxy.Server.zip
+
+sudo groupadd -f nix-daemon-proxy
+
+sudo tee /etc/systemd/system/nix-daemon-proxy-server.service > /dev/null << 'EOF'
+[Unit]
+Description=Nix Daemon Proxy Server
+
+[Service]
+ExecStart=/usr/bin/dotnet /opt/nix-daemon-proxy/NixDaemonProxy.Server.dll
+Restart=on-failure
+RestartSec=5s
+ExecStartPre=/bin/rm -f /run/nix-daemon-proxy.sock
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now nix-daemon-proxy-server
+
+sudo usermod -aG nix-daemon-proxy <trusted-users>    # won't take effect in current login session.
+```
+
+## Server options
 
 The server binary accepts a few options (defaults shown):
 
@@ -130,13 +150,12 @@ The server binary accepts a few options (defaults shown):
 
 ## Client setup
 
+The client (`NixDaemonProxy.Client`) is exposed by the same flake. The simplest way is to set `services.nix-daemon-proxy.installClient = true` (see above), which installs a wrapped client named `nix-daemon-proxy` with the control socket already preset.
+
+To install the plain client per-user instead, e.g. in `home.packages`:
+
 ```nix
-{ nur, ... }:
-{
-  home.packages = [
-    nur.yueyinqiu.nix-daemon-proxy-client
-  ];
-}
+nix-daemon-proxy.packages.${system}.nix-daemon-proxy-client
 ```
 
 ## Usage
@@ -234,17 +253,6 @@ sudo systemctl restart nix-daemon
 
 - The local proxy is bound to `127.0.0.1` and protected by Basic auth, but only the server knows the (random) password.
 - Access to the control socket is restricted to the `nix-daemon-proxy` group, so only members can switch the proxy.
-
-## Building from source
-
-The flake exposes a dev shell with the .NET 10 SDK:
-
-```sh
-nix develop
-dotnet build
-```
-
-Packages are exposed as `nix-daemon-proxy-client` and `nix-daemon-proxy-server` on all flake-exposed systems.
 
 ## License
 
