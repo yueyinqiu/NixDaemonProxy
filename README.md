@@ -40,7 +40,7 @@ The flow is:
 
 This means you can switch between a VPN, a public proxy, or "direct" as often as you like — no rebuild, no reboot, no manual file editing.
 
-## Server setup (NixOS)
+## Server setup
 
 Add the server to your NixOS configuration (e.g. in `configuration.nix` or a NixOS module):
 
@@ -83,7 +83,38 @@ Here `nur` is `github:nix-community/NUR#legacyPackages.<your-system>.repos`.
 > }
 > ```
 
-> If you don't use NixOS, just create the `nix-daemon-proxy` group and run the server as root.
+If you don't use NixOS, just create the `nix-daemon-proxy` group and run the server as root. Take Ubuntu as an example:
+
+> ```
+> sudo apt-get update
+> sudo apt-get install -y dotnet-sdk-10.0 wget unzip
+>
+> wget -O /tmp/NixDaemonProxy.Server.zip https://github.com/yueyinqiu/NixDaemonProxy/releases/latest/download/NixDaemonProxy.Server.zip
+> sudo mkdir -p /opt/nix-daemon-proxy
+> sudo unzip /tmp/NixDaemonProxy.Server.zip -d /opt/nix-daemon-proxy
+> rm /tmp/NixDaemonProxy.Server.zip
+>
+> sudo groupadd -f nix-daemon-proxy
+> 
+> sudo tee /etc/systemd/system/nix-daemon-proxy-server.service > /dev/null << 'EOF'
+> [Unit]
+> Description=Nix Daemon Proxy Server
+> 
+> [Service]
+> ExecStart=/usr/bin/dotnet /opt/nix-daemon-proxy/NixDaemonProxy.Server.dll
+> Restart=on-failure
+> RestartSec=5s
+> ExecStartPre=/bin/rm -f /run/nix-daemon-proxy.sock
+> 
+> [Install]
+> WantedBy=multi-user.target
+> EOF
+>
+> sudo systemctl daemon-reload
+> sudo systemctl enable --now nix-daemon-proxy-server
+>
+> sudo usermod -aG nix-daemon-proxy <trusted-users>    # won't take effect in current login session.
+> ```
 
 ### Server options
 
