@@ -9,17 +9,6 @@
       forAllSystems = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
     in
     {
-      packages = forAllSystems (
-        system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-        in
-        {
-          nix-daemon-proxy-client = pkgs.callPackage ./nix/client { };
-          nix-daemon-proxy-server = pkgs.callPackage ./nix/server { };
-        }
-      );
-
       devShells = forAllSystems (
         system:
         let
