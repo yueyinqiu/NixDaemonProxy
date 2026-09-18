@@ -158,6 +158,24 @@ To install the plain client per-user instead, e.g. in `home.packages`:
 nix-daemon-proxy.packages.${system}.nix-daemon-proxy-client
 ```
 
+Or run it directly without installing anything:
+
+```console
+$ nix run github:yueyinqiu/NixDaemonProxy-Nix#nix-daemon-proxy-client -- http -H 127.0.0.1 -P 7890
+```
+
+Or enter a shell that has it on `PATH`:
+
+```console
+$ nix shell github:yueyinqiu/NixDaemonProxy-Nix#nix-daemon-proxy-client
+```
+
+Or install it into your profile:
+
+```console
+$ nix profile install github:yueyinqiu/NixDaemonProxy-Nix#nix-daemon-proxy-client
+```
+
 ## Usage
 
 The client talks to the server over the control socket, so **you must be a member of the `nix-daemon-proxy` group** to use it.
