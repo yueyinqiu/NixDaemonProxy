@@ -275,3 +275,7 @@ sudo systemctl restart nix-daemon
 ## License
 
 [MIT](LICENSE)
+
+---
+
+The documentation is AI-generated.
