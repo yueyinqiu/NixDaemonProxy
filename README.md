@@ -105,7 +105,7 @@ The proxy password is always generated randomly per boot by the server.
 
 If you don't use NixOS, just create the `nix-daemon-proxy` group and run the server as root. Take Ubuntu as an example:
 
-```console
+```bash
 sudo apt-get update
 sudo apt-get install -y dotnet-sdk-10.0 wget unzip
 
