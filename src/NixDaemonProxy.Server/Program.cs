@@ -18,19 +18,19 @@ namespace NixDaemonProxy.Server;
 [Command]
 public partial class Program : ICommand
 {
-    [CommandOption("control-socket")]
+    [CommandOption("control-socket", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_ARGUMENT_CONTROL_SOCKET")]
     public string ControlSocket { get; set; } = "/run/nix-daemon-proxy.sock";
 
-    [CommandOption("control-group")]
+    [CommandOption("control-group", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_ARGUMENT_CONTROL_GROUP")]
     public string ControlGroup { get; set; } = "nix-daemon-proxy";
 
-    [CommandOption("proxy-password", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_SECRET_ARGUMENTS_PROXY_PASSWORD")]
+    [CommandOption("proxy-password", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_ARGUMENT_PROXY_PASSWORD")]
     public string? ProxyPassword { get; set; } = null;
 
-    [CommandOption("proxy-port")]
+    [CommandOption("proxy-port", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_ARGUMENT_PROXY_PORT")]
     public int ProxyPort { get; set; } = 0;
 
-    [CommandOption("nix-daemon-service")]
+    [CommandOption("nix-daemon-service", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_ARGUMENT_NIX_DAEMON_SERVICE")]
     public string? NixDaemonService { get; set; } = "nix-daemon";
 
     public async ValueTask ExecuteAsync(IConsole console)

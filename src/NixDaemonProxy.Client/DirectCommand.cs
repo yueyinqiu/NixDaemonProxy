@@ -9,7 +9,7 @@ namespace NixDaemonProxy.Client;
 [Command("direct")]
 partial class DirectCommand : ICommand
 {
-    [CommandOption("control-socket")]
+    [CommandOption("control-socket", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_CONTROL_SOCKET")]
     public string ControlSocket { get; set; } = "/run/nix-daemon-proxy.sock";
 
     public async ValueTask ExecuteAsync(IConsole console)

@@ -144,7 +144,7 @@ The server binary accepts a few options (defaults shown):
 | ------------------- | -------------------------- | ---------------------------------------------------------- |
 | `--control-socket`  | `/run/nix-daemon-proxy.sock` | Unix socket path the control HTTP server listens on       |
 | `--control-group`   | `nix-daemon-proxy`         | Group that gets read/write access to the control socket    |
-| `--proxy-password`  | *(random, generated)*      | Basic-auth password for the local proxy. Random per boot by default; set it explicitly to keep it stable. Can also be supplied via the `NIX_DAEMON_PROXY_SERVER_SECRET_ARGUMENTS_PROXY_PASSWORD` environment variable |
+| `--proxy-password`  | *(random, generated)*      | Basic-auth password for the local proxy. Random per boot by default; set it explicitly to keep it stable. Can also be supplied via the `NIX_DAEMON_PROXY_SERVER_ARGUMENT_PROXY_PASSWORD` environment variable |
 | `--proxy-port`      | `0` *(random)*             | TCP port the local proxy listens on (`127.0.0.1`)          |
 | `--nix-daemon-service` | `nix-daemon`             | Name of the systemd service to configure. Pass the flag without a value (`--nix-daemon-service`) to disable daemon configuration |
 
@@ -180,10 +180,10 @@ $ nix profile install github:yueyinqiu/NixDaemonProxy-Nix#nix-daemon-proxy-clien
 
 The client talks to the server over the control socket, so **you must be a member of the `nix-daemon-proxy` group** to use it.
 
-> **Security:** never pass a password on the command line. Options like `-p` show up in `ps` and are visible to any local user. Use the `NIX_DAEMON_PROXY_CLIENT_SECRET_ARGUMENTS_PASSWORD` environment variable instead — the command line takes precedence if both are set:
+> **Security:** never pass a password on the command line. Options like `-p` show up in `ps` and are visible to any local user. Use the `NIX_DAEMON_PROXY_ARGUMENT_PASSWORD` environment variable instead — the command line takes precedence if both are set:
 >
 > ```sh
-> export NIX_DAEMON_PROXY_CLIENT_SECRET_ARGUMENTS_PASSWORD=secret
+> export NIX_DAEMON_PROXY_ARGUMENT_PASSWORD=secret
 > NixDaemonProxy.Client http -H 127.0.0.1 -P 7890 -u user
 > ```
 >
@@ -249,7 +249,7 @@ Shared options:
 - `--host-name` / `-H`: upstream proxy host.
 - `--port` / `-P`: upstream proxy port.
 - `--user-name` / `-u`: upstream proxy username (optional).
-- `--password` / `-p`: upstream proxy password (optional). Can also be supplied via the `NIX_DAEMON_PROXY_CLIENT_SECRET_ARGUMENTS_PASSWORD` environment variable; the command line takes precedence.
+- `--password` / `-p`: upstream proxy password (optional). Can also be supplied via the `NIX_DAEMON_PROXY_ARGUMENT_PASSWORD` environment variable; the command line takes precedence.
 - `--proxy-dns-requests` (default `true`): let the proxy resolve DNS instead of the local machine.
 - `--bypass-localhost` (default `false`): do not proxy requests to localhost.
 - `--control-socket` (default `/run/nix-daemon-proxy.sock`): path of the server's control socket, in case it was changed.

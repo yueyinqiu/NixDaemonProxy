@@ -10,25 +10,25 @@ namespace NixDaemonProxy.Client;
 [Command("http")]
 partial class HttpCommand : ICommand
 {
-    [CommandOption("host-name", 'H')]
+    [CommandOption("host-name", 'H', EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_HOST_NAME")]
     public required string HostName { get; set; }
 
-    [CommandOption("port", 'P')]
+    [CommandOption("port", 'P', EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_PORT")]
     public required int Port { get; set; }
 
-    [CommandOption("user-name", 'u')]
+    [CommandOption("user-name", 'u', EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_USER_NAME")]
     public string? UserName { get; set; } = null;
 
-    [CommandOption("password", 'p', EnvironmentVariable = "NIX_DAEMON_PROXY_CLIENT_SECRET_ARGUMENTS_PASSWORD")]
+    [CommandOption("password", 'p', EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_PASSWORD")]
     public string? Password { get; set; } = null;
 
-    [CommandOption("proxy-dns-requests")]
+    [CommandOption("proxy-dns-requests", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_PROXY_DNS_REQUESTS")]
     public bool ProxyDnsRequests { get; set; } = true;
 
-    [CommandOption("bypass-localhost")]
+    [CommandOption("bypass-localhost", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_BYPASS_LOCALHOST")]
     public bool BypassLocalhost { get; set; } = false;
     
-    [CommandOption("control-socket")]
+    [CommandOption("control-socket", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_CONTROL_SOCKET")]
     public string ControlSocket { get; set; } = "/run/nix-daemon-proxy.sock";
 
     public async ValueTask ExecuteAsync(IConsole console)
