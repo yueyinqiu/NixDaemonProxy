@@ -138,15 +138,15 @@ sudo usermod -aG nix-daemon-proxy <trusted-users>    # won't take effect in curr
 
 ## Server options
 
-The server binary accepts a few options (defaults shown):
+The server binary accepts a few options (defaults shown). Every option can also be supplied via its environment variable; the command line takes precedence:
 
-| Option              | Default                    | Meaning                                                    |
-| ------------------- | -------------------------- | ---------------------------------------------------------- |
-| `--control-socket`  | `/run/nix-daemon-proxy.sock` | Unix socket path the control HTTP server listens on       |
-| `--control-group`   | `nix-daemon-proxy`         | Group that gets read/write access to the control socket    |
-| `--proxy-password`  | *(random, generated)*      | Basic-auth password for the local proxy. Random per boot by default; set it explicitly to keep it stable. Can also be supplied via the `NIX_DAEMON_PROXY_SERVER_ARGUMENT_PROXY_PASSWORD` environment variable |
-| `--proxy-port`      | `0` *(random)*             | TCP port the local proxy listens on (`127.0.0.1`)          |
-| `--nix-daemon-service` | `nix-daemon`             | Name of the systemd service to configure. Pass the flag without a value (`--nix-daemon-service`) to disable daemon configuration |
+| Option                  | Environment variable                               | Default                   | Meaning                                                                                                                             |
+| ----------------------- | -------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `--control-socket`      | `NIX_DAEMON_PROXY_SERVER_ARGUMENT_CONTROL_SOCKET`  | `/run/nix-daemon-proxy.sock` | Unix socket path the control HTTP server listens on                                                                            |
+| `--control-group`       | `NIX_DAEMON_PROXY_SERVER_ARGUMENT_CONTROL_GROUP`   | `nix-daemon-proxy`        | Group that gets read/write access to the control socket                                                                             |
+| `--proxy-password`      | `NIX_DAEMON_PROXY_SERVER_ARGUMENT_PROXY_PASSWORD`  | *(random, generated)*     | Basic-auth password for the local proxy. Random per boot by default; set it explicitly to keep it stable                            |
+| `--proxy-port`          | `NIX_DAEMON_PROXY_SERVER_ARGUMENT_PROXY_PORT`      | `0` *(random)*            | TCP port the local proxy listens on (`127.0.0.1`)                                                                                   |
+| `--nix-daemon-service`  | `NIX_DAEMON_PROXY_SERVER_ARGUMENT_NIX_DAEMON_SERVICE` | `nix-daemon`            | Name of the systemd service to configure. Pass the flag without a value (`--nix-daemon-service`) to disable daemon configuration |
 
 ## Client setup
 
@@ -244,15 +244,15 @@ EOF
 | `direct` | `--control-socket <path>` | Remove the upstream proxy (go direct) |
 | `from-json` | `--control-socket <path>` | Read a JSON `Proxy` record from stdin and set it as the upstream (supports `NextHop` chains) |
 
-Shared options:
+Shared options (each can also be supplied via its environment variable; the command line takes precedence):
 
-- `--host-name` / `-H`: upstream proxy host.
-- `--port` / `-P`: upstream proxy port.
-- `--user-name` / `-u`: upstream proxy username (optional).
-- `--password` / `-p`: upstream proxy password (optional). Can also be supplied via the `NIX_DAEMON_PROXY_ARGUMENT_PASSWORD` environment variable; the command line takes precedence.
-- `--proxy-dns-requests` (default `true`): let the proxy resolve DNS instead of the local machine.
-- `--bypass-localhost` (default `false`): do not proxy requests to localhost.
-- `--control-socket` (default `/run/nix-daemon-proxy.sock`): path of the server's control socket, in case it was changed.
+- `--host-name` / `-H`: upstream proxy host. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_HOST_NAME`.
+- `--port` / `-P`: upstream proxy port. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_PORT`.
+- `--user-name` / `-u`: upstream proxy username (optional). Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_USER_NAME`.
+- `--password` / `-p`: upstream proxy password (optional). Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_PASSWORD`.
+- `--proxy-dns-requests` (default `true`): let the proxy resolve DNS instead of the local machine. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_PROXY_DNS_REQUESTS`.
+- `--bypass-localhost` (default `false`): do not proxy requests to localhost. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_BYPASS_LOCALHOST`.
+- `--control-socket` (default `/run/nix-daemon-proxy.sock`): path of the server's control socket, in case it was changed. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_CONTROL_SOCKET`.
 
 ## Rescue: proxy switched but not working
 
