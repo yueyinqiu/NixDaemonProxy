@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using NixDaemonProxy.Interface;
 
 namespace NixDaemonProxy.Client;
@@ -17,7 +18,7 @@ internal sealed class NixDaemonProxyClient(string controlSocket)
         var fingerprint = await response.Content.ReadFromJsonAsync(
             ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint,
             cancellationToken
-        ) ?? throw new InvalidOperationException("switch returned null");
+        ) ?? throw new JsonException("switch returned null");
         return new ProxyStatus(
             fingerprint.Fingerprint,
             proxy.Proxy?.ProxyType,
@@ -37,7 +38,7 @@ internal sealed class NixDaemonProxyClient(string controlSocket)
         var fingerprint = await response.Content.ReadFromJsonAsync(
             ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint,
             cancellationToken
-        ) ?? throw new InvalidOperationException("fingerprint returned null");
+        ) ?? throw new JsonException("fingerprint returned null");
         return new ProxyStatus(
             fingerprint.Fingerprint,
             proxy.Proxy?.ProxyType,
@@ -53,7 +54,7 @@ internal sealed class NixDaemonProxyClient(string controlSocket)
         var result = await response.Content.ReadFromJsonAsync(
             ProxyStatusJsonSerializerContext.Default.ProxyStatus,
             cancellationToken
-        ) ?? throw new InvalidOperationException("status returned null");
+        ) ?? throw new JsonException("status returned null");
         return result;
     }
 }
