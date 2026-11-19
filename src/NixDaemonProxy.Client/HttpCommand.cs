@@ -27,6 +27,12 @@ partial class HttpCommand : ICommand
 
     [CommandOption("bypass-localhost", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_BYPASS_LOCALHOST")]
     public bool BypassLocalhost { get; set; } = false;
+
+    [CommandOption("comment", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_COMMENT")]
+    public string Comment { get; set; } = "";
+
+    [CommandOption("dry-run", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_DRY_RUN")]
+    public bool DryRun { get; set; } = false;
     
     [CommandOption("control-socket", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_CONTROL_SOCKET")]
     public string ControlSocket { get; set; } = "/run/nix-daemon-proxy.sock";
@@ -34,14 +40,17 @@ partial class HttpCommand : ICommand
     public async ValueTask ExecuteAsync(IConsole console)
     {
         var proxy = new Proxy(
+            this.Comment,
             ProxyType.Http,
             this.HostName, this.Port,
             this.UserName, this.Password,
             this.ProxyDnsRequests, this.BypassLocalhost, null
         );
-        using var client = UnixSocketHttpClient.Create(this.ControlSocket);
-        var response = await client.PostAsJsonAsync("switch", proxy, ProxyJsonSerializerContext.Default.Proxy);
-        response.EnsureSuccessStatusCode();
-        console.WriteLine(response.StatusCode);
+        var client = new NixDaemonProxyClient(ControlSocket);
+        var fingerprint = await (DryRun ?
+            client.SwitchAsync(proxy) :
+            client.FingerprintAsync(proxy)
+        );
+        console.WriteLine(client.Serialize(fingerprint));
     }
 }

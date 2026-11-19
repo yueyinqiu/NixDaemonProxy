@@ -14,9 +14,8 @@ partial class DirectCommand : ICommand
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
-        using var client = UnixSocketHttpClient.Create(this.ControlSocket);
-        var response = await client.PostAsJsonAsync("switch", null, ProxyJsonSerializerContext.Default.Proxy);
-        response.EnsureSuccessStatusCode();
-        console.WriteLine(response.StatusCode);
+        var client = new NixDaemonProxyClient(ControlSocket);
+        var fingerprint = await client.SwitchAsync(null);
+        console.WriteLine(client.Serialize(fingerprint));
     }
 }

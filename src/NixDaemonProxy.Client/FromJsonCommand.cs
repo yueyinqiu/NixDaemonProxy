@@ -13,15 +13,20 @@ partial class FromJsonCommand : ICommand
     [CommandOption("control-socket", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_CONTROL_SOCKET")]
     public string ControlSocket { get; set; } = "/run/nix-daemon-proxy.sock";
 
+    [CommandOption("dry-run", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_DRY_RUN")]
+    public bool DryRun { get; set; } = false;
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
         var proxy = await JsonSerializer.DeserializeAsync(
             console.Input.BaseStream,
             ProxyJsonSerializerContext.Default.Proxy
         );
-        using var client = UnixSocketHttpClient.Create(this.ControlSocket);
-        var response = await client.PostAsJsonAsync("switch", proxy, ProxyJsonSerializerContext.Default.Proxy);
-        response.EnsureSuccessStatusCode();
-        console.WriteLine(response.StatusCode);
+        var client = new NixDaemonProxyClient(ControlSocket);
+        var fingerprint = await (DryRun ?
+            client.SwitchAsync(proxy) :
+            client.FingerprintAsync(proxy)
+        );
+        console.WriteLine(client.Serialize(fingerprint));
     }
 }
