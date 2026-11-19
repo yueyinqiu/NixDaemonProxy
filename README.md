@@ -103,16 +103,11 @@ The proxy password is always generated randomly per boot by the server.
 
 ### Other distributions
 
-If you don't use NixOS, just create the `nix-daemon-proxy` group and run the server as root. Take Ubuntu as an example:
+If you don't use NixOS, just create the `nix-daemon-proxy` group and run the server as root. Take Ubuntu (x86_64) as an example — on ARM64, use `NixDaemonProxy.Server-linux-arm64` instead:
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y dotnet-sdk-10.0 wget unzip
-
-wget -O /tmp/NixDaemonProxy.Server.zip https://github.com/yueyinqiu/NixDaemonProxy/releases/latest/download/NixDaemonProxy.Server.zip
-sudo mkdir -p /opt/nix-daemon-proxy
-sudo unzip /tmp/NixDaemonProxy.Server.zip -d /opt/nix-daemon-proxy
-rm /tmp/NixDaemonProxy.Server.zip
+sudo wget -O /usr/local/bin/NixDaemonProxy.Server https://github.com/yueyinqiu/NixDaemonProxy/releases/latest/download/NixDaemonProxy.Server-linux-x64
+sudo chmod +x /usr/local/bin/NixDaemonProxy.Server
 
 sudo groupadd -f nix-daemon-proxy
 
@@ -121,7 +116,7 @@ sudo tee /etc/systemd/system/nix-daemon-proxy-server.service > /dev/null << 'EOF
 Description=Nix Daemon Proxy Server
 
 [Service]
-ExecStart=/usr/bin/dotnet /opt/nix-daemon-proxy/NixDaemonProxy.Server.dll
+ExecStart=/usr/local/bin/NixDaemonProxy.Server
 Restart=on-failure
 RestartSec=5s
 ExecStartPre=/bin/rm -f /run/nix-daemon-proxy.sock
