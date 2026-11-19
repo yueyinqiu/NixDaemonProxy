@@ -48,8 +48,8 @@ partial class Socks5Command : ICommand
         );
         var client = new NixDaemonProxyClient(ControlSocket);
         var fingerprint = await (DryRun ?
-            client.SwitchAsync(proxy) :
-            client.FingerprintAsync(proxy)
+            client.FingerprintAsync(proxy) :
+            client.SwitchAsync(proxy)
         );
         console.WriteLine(client.Serialize(fingerprint));
     }

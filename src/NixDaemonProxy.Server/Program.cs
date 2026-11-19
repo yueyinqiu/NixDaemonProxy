@@ -45,7 +45,7 @@ public partial class Program : ICommand
         }
         var bytes = JsonSerializer.SerializeToUtf8Bytes(
             proxy,
-            ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint
+            ProxyJsonSerializerContext.Default.Proxy
         );
         return new ProxyFingerprint(
             $"{proxy.ProxyType}:{Convert.ToHexString(SHA256.HashData(bytes))}",
@@ -72,7 +72,8 @@ public partial class Program : ICommand
         builder.Services.ConfigureHttpJsonOptions(x =>
         {
             x.SerializerOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
-                ProxyJsonSerializerContext.Default
+                ProxyJsonSerializerContext.Default,
+                ProxyFingerprintJsonSerializerContext.Default
             );
         });
         var app = builder.Build();

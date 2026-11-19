@@ -30,7 +30,7 @@ internal sealed class NixDaemonProxyClient(string controlSocket)
     {
         using var client = UnixSocketHttpClient.Create(controlSocket);
         using var content = JsonContent.Create(proxy, ProxyJsonSerializerContext.Default.Proxy);
-        using var response = await client.PostAsync("switch", content, cancellationToken);
+        using var response = await client.PostAsync("fingerprint", content, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync(
             ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint,
