@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using CliFx;
 using CliFx.Binding;
@@ -33,6 +35,24 @@ public partial class Program : ICommand
     [CommandOption("nix-daemon-service", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_ARGUMENT_NIX_DAEMON_SERVICE")]
     public string? NixDaemonService { get; set; } = "nix-daemon";
 
+    private ProxyFingerprint currentProxy = GetFingerprint(null);
+
+    private static ProxyFingerprint GetFingerprint(Proxy? proxy)
+    {
+        if (proxy is null)
+        {
+            return new ProxyFingerprint("Direct", "");
+        }
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(
+            proxy,
+            ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint
+        );
+        return new ProxyFingerprint(
+            $"{proxy.ProxyType}:{Convert.ToHexString(SHA256.HashData(bytes))}",
+            proxy.Comment
+        );
+    }
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
         var password = this.ProxyPassword ?? Guid.NewGuid().ToString("N");
@@ -57,12 +77,18 @@ public partial class Program : ICommand
         });
         var app = builder.Build();
 
-        app.MapPost("/switch", async ([FromBody] Proxy? proxy) =>
+
+        app.MapPost("/switch", ([FromBody] Proxy? proxy) =>
         {
             var externalProxy = proxy?.ToExternalProxy();
             proxyServer.UpStreamHttpProxy = externalProxy;
             proxyServer.UpStreamHttpsProxy = externalProxy;
+            this.currentProxy = GetFingerprint(proxy);
+            return this.currentProxy;
         });
+
+        app.MapPost("/current", () => this.currentProxy);
+        app.MapPost("/fingerprint", ([FromBody] Proxy? proxy) => GetFingerprint(proxy));
 
         var daemonConfigurator = NixDaemonService is null ? null : new NixDaemonProxyConfigurator(NixDaemonService);
         app.Lifetime.ApplicationStarted.Register(() =>
