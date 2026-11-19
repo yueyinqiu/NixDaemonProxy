@@ -56,6 +56,7 @@ public partial class Program : ICommand
         builder.Services.AddRouting();
         builder.Services.ConfigureHttpJsonOptions(x =>
         {
+            x.SerializerOptions.PropertyNamingPolicy = null;
             x.SerializerOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
                 ProxyJsonSerializerContext.Default,
                 CommentedProxyJsonSerializerContext.Default,
