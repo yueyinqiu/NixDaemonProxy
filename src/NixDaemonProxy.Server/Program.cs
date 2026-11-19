@@ -35,6 +35,7 @@ public partial class Program : ICommand
     [CommandOption("nix-daemon-service", EnvironmentVariable = "NIX_DAEMON_PROXY_SERVER_ARGUMENT_NIX_DAEMON_SERVICE")]
     public string? NixDaemonService { get; set; } = "nix-daemon";
 
+    private readonly Lock locker = new();
     private ProxyFingerprint currentProxy = GetFingerprint(null);
 
     private static ProxyFingerprint GetFingerprint(Proxy? proxy)
@@ -82,10 +83,14 @@ public partial class Program : ICommand
         app.MapPost("/switch", ([FromBody] Proxy? proxy) =>
         {
             var externalProxy = proxy?.ToExternalProxy();
-            proxyServer.UpStreamHttpProxy = externalProxy;
-            proxyServer.UpStreamHttpsProxy = externalProxy;
-            this.currentProxy = GetFingerprint(proxy);
-            return this.currentProxy;
+            var fingerprint = GetFingerprint(proxy);
+            lock (this.locker)
+            {
+                proxyServer.UpStreamHttpProxy = externalProxy;
+                proxyServer.UpStreamHttpsProxy = externalProxy;
+                this.currentProxy = fingerprint;
+            }
+            return fingerprint;
         });
 
         app.MapPost("/current", () => this.currentProxy);
