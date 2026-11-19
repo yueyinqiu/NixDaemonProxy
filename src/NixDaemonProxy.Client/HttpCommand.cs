@@ -33,6 +33,9 @@ partial class HttpCommand : ICommand
 
     [CommandOption("dry-run", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_DRY_RUN")]
     public bool DryRun { get; set; } = false;
+
+    [CommandOption("json", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_JSON")]
+    public bool Json { get; set; } = false;
     
     [CommandOption("control-socket", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_CONTROL_SOCKET")]
     public string ControlSocket { get; set; } = "/run/nix-daemon-proxy.sock";
@@ -40,17 +43,17 @@ partial class HttpCommand : ICommand
     public async ValueTask ExecuteAsync(IConsole console)
     {
         var proxy = new Proxy(
-            this.Comment,
             ProxyType.Http,
             this.HostName, this.Port,
             this.UserName, this.Password,
             this.ProxyDnsRequests, this.BypassLocalhost, null
         );
         var client = new NixDaemonProxyClient(ControlSocket);
-        var fingerprint = await (DryRun ?
-            client.FingerprintAsync(proxy) :
-            client.SwitchAsync(proxy)
+        var commentedProxy = new CommentedProxy(proxy, this.Comment);
+        var status = await (DryRun ?
+            client.FingerprintAsync(commentedProxy) :
+            client.SwitchAsync(commentedProxy)
         );
-        console.WriteLine(client.Serialize(fingerprint));
+        console.WriteProxyStatus(status, this.Json);
     }
 }

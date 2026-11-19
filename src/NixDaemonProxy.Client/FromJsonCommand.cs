@@ -3,6 +3,7 @@ using System.Text.Json;
 using CliFx;
 using CliFx.Binding;
 using CliFx.Infrastructure;
+using NixDaemonProxy.Interface;
 
 namespace NixDaemonProxy.Client;
 
@@ -16,17 +17,21 @@ partial class FromJsonCommand : ICommand
     [CommandOption("dry-run", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_DRY_RUN")]
     public bool DryRun { get; set; } = false;
 
+    [CommandOption("json", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_JSON")]
+    public bool Json { get; set; } = false;
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
         var proxy = await JsonSerializer.DeserializeAsync(
             console.Input.BaseStream,
-            ProxyJsonSerializerContext.Default.Proxy
+            CommentedProxyJsonSerializerContext.Default.CommentedProxy
         );
         var client = new NixDaemonProxyClient(ControlSocket);
-        var fingerprint = await (DryRun ?
-            client.FingerprintAsync(proxy) :
-            client.SwitchAsync(proxy)
+        var config = proxy ?? new CommentedProxy(null, "");
+        var status = await (DryRun ?
+            client.FingerprintAsync(config) :
+            client.SwitchAsync(config)
         );
-        console.WriteLine(client.Serialize(fingerprint));
+        console.WriteProxyStatus(status, this.Json);
     }
 }
