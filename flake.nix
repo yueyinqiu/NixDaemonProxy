@@ -18,14 +18,27 @@
           default = pkgs.mkShell {
             packages = [
               pkgs.dotnetCorePackages.sdk_10_0
+              pkgs.clang
               (pkgs.writeShellScriptBin "dev-publish" ''
                 set -euo pipefail
                 mkdir -p publish
                 temp=$(mktemp -d -p publish)
 
+                # linux-x64 (native AOT)
+                dotnet publish src/NixDaemonProxy.Server/NixDaemonProxy.Server.csproj -c Release -r linux-x64 -p:PublishAot=true -o "$temp/NixDaemonProxy.Server-linux-x64"
+                ouch compress "$temp/NixDaemonProxy.Server-linux-x64"/* "$temp/NixDaemonProxy.Server-linux-x64.zip"
+                dotnet publish src/NixDaemonProxy.Client/NixDaemonProxy.Client.csproj -c Release -r linux-x64 -p:PublishAot=true -o "$temp/NixDaemonProxy.Client-linux-x64"
+                ouch compress "$temp/NixDaemonProxy.Client-linux-x64"/* "$temp/NixDaemonProxy.Client-linux-x64.zip"
+
+                # linux-arm64 (self-contained)
+                dotnet publish src/NixDaemonProxy.Server/NixDaemonProxy.Server.csproj -c Release -r linux-arm64 --self-contained -p:PublishTrimmed=true -o "$temp/NixDaemonProxy.Server-linux-arm64"
+                ouch compress "$temp/NixDaemonProxy.Server-linux-arm64"/* "$temp/NixDaemonProxy.Server-linux-arm64.zip"
+                dotnet publish src/NixDaemonProxy.Client/NixDaemonProxy.Client.csproj -c Release -r linux-arm64 --self-contained -p:PublishTrimmed=true -o "$temp/NixDaemonProxy.Client-linux-arm64"
+                ouch compress "$temp/NixDaemonProxy.Client-linux-arm64"/* "$temp/NixDaemonProxy.Client-linux-arm64.zip"
+
+                # framework-dependent
                 dotnet publish src/NixDaemonProxy.Server/NixDaemonProxy.Server.csproj -c Release -o "$temp/NixDaemonProxy.Server"
                 ouch compress "$temp/NixDaemonProxy.Server"/* "$temp/NixDaemonProxy.Server.zip"
-
                 dotnet publish src/NixDaemonProxy.Client/NixDaemonProxy.Client.csproj -c Release -o "$temp/NixDaemonProxy.Client"
                 ouch compress "$temp/NixDaemonProxy.Client"/* "$temp/NixDaemonProxy.Client.zip"
               '')
