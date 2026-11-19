@@ -36,23 +36,7 @@ public partial class Program : ICommand
     public string? NixDaemonService { get; set; } = "nix-daemon";
 
     private readonly Lock locker = new();
-    private ProxyFingerprint currentProxy = GetFingerprint(null);
-
-    private static ProxyFingerprint GetFingerprint(Proxy? proxy)
-    {
-        if (proxy is null)
-        {
-            return new ProxyFingerprint("Direct", "");
-        }
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(
-            proxy,
-            ProxyJsonSerializerContext.Default.Proxy
-        );
-        return new ProxyFingerprint(
-            $"{proxy.ProxyType}:{Convert.ToHexString(SHA256.HashData(bytes))}",
-            proxy.Comment
-        );
-    }
+    private ProxyStatus current = new(null, null, "Not set");
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
@@ -74,27 +58,34 @@ public partial class Program : ICommand
         {
             x.SerializerOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
                 ProxyJsonSerializerContext.Default,
-                ProxyFingerprintJsonSerializerContext.Default
+                CommentedProxyJsonSerializerContext.Default,
+                ProxyFingerprintJsonSerializerContext.Default,
+                ProxyStatusJsonSerializerContext.Default
             );
         });
         var app = builder.Build();
 
 
-        app.MapPost("/switch", ([FromBody] Proxy? proxy) =>
+        app.MapPost("/switch", ([FromBody] CommentedProxy proxy) =>
         {
-            var externalProxy = proxy?.ToExternalProxy();
-            var fingerprint = GetFingerprint(proxy);
+            var externalProxy = proxy.Proxy?.ToExternalProxy();
+            var status = new ProxyStatus(
+                proxy.Proxy?.GetFingerprint(),
+                proxy.Proxy?.ProxyType,
+                proxy.Comment
+            );
             lock (this.locker)
             {
                 proxyServer.UpStreamHttpProxy = externalProxy;
                 proxyServer.UpStreamHttpsProxy = externalProxy;
-                this.currentProxy = fingerprint;
+                this.current = status;
             }
-            return fingerprint;
+            return new ProxyFingerprint(status.Fingerprint);
         });
 
-        app.MapPost("/current", () => this.currentProxy);
-        app.MapPost("/fingerprint", ([FromBody] Proxy? proxy) => GetFingerprint(proxy));
+        app.MapPost("/status", () => this.current);
+
+        app.MapPost("/fingerprint", ([FromBody] Proxy? proxy) => new ProxyFingerprint(proxy?.GetFingerprint()));
 
         var daemonConfigurator = NixDaemonService is null ? null : new NixDaemonProxyConfigurator(NixDaemonService);
         app.Lifetime.ApplicationStarted.Register(() =>
