@@ -3,7 +3,7 @@ using NixDaemonProxy.Interface;
 
 namespace NixDaemonProxy.Server;
 
-[JsonSourceGenerationOptions(RespectNullableAnnotations = true, UseStringEnumConverter = true)]
+[JsonSourceGenerationOptions(RespectNullableAnnotations = true, UseStringEnumConverter = true, RespectRequiredConstructorParameters = true, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]
 [JsonSerializable(typeof(CommentedProxy))]
 partial class CommentedProxyJsonSerializerContext : JsonSerializerContext
 {
