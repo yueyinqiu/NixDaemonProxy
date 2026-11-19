@@ -5,7 +5,7 @@ using CliFx.Infrastructure;
 namespace NixDaemonProxy.Client;
 
 
-[Command("status")]
+[Command("current")]
 partial class CurrentCommand : ICommand
 {
     [CommandOption("control-socket", EnvironmentVariable = "NIX_DAEMON_PROXY_ARGUMENT_CONTROL_SOCKET")]

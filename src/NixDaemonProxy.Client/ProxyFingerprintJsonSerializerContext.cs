@@ -3,7 +3,7 @@ using NixDaemonProxy.Interface;
 
 namespace NixDaemonProxy.Client;
 
-[JsonSourceGenerationOptions(RespectNullableAnnotations = true, UseStringEnumConverter = true)]
+[JsonSourceGenerationOptions(RespectNullableAnnotations = true, UseStringEnumConverter = true, WriteIndented = true)]
 [JsonSerializable(typeof(ProxyFingerprint))]
 partial class ProxyFingerprintJsonSerializerContext : JsonSerializerContext
 {
