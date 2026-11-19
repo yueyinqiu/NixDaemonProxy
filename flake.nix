@@ -26,8 +26,8 @@
                   pkgs.zip
                 ];
                 text = ''
-                  if [ ! -f src/NixDaemonProxy.slnx ]; then
-                    echo "error: dev-publish must be run from the project root (missing src/NixDaemonProxy.slnx)" >&2
+                  if [ ! -f NixDaemonProxy.slnx ]; then
+                    echo "error: dev-publish must be run from the project root (missing NixDaemonProxy.slnx)" >&2
                     exit 1
                   fi
 
