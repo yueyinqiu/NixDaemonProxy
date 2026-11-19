@@ -209,58 +209,67 @@ NixDaemonProxy.Client direct
 
 ### Show or verify the current upstream
 
-Every switch prints a **fingerprint** of the resulting configuration as JSON:
-
-```json
-{
-  "Fingerprint": "Direct",
-  "Comment": ""
-}
-```
-
-or, with a proxy active:
-
-```json
-{
-  "Fingerprint": "Socks5:1A2B…",
-  "Comment": "my-label"
-}
-```
-
-`Fingerprint` is `Direct`, or `<Type>:<hash>` (e.g. `Socks5:1A2B…`); the hash is a SHA-256 over the whole `Proxy` record (credentials and `NextHop` included), so different credentials give different fingerprints while no sensitive detail is ever revealed. `Comment` is the free-form label you attach when switching.
+Every switch prints the new state in the same format as `status` below: the type (and fingerprint) on the first line, the `Comment` on the second — or an object with `--json`. The `Fingerprint` is a hex SHA-256 of the `Proxy` (credentials and `NextHop` included), so different configs give different fingerprints while no sensitive detail is revealed. Use `--dry-run` to print the state without actually switching.
 
 ```sh
-NixDaemonProxy.Client current
+NixDaemonProxy.Client status
 ```
 
-re-prints the current fingerprint at any time, so you can compare it against the one you got when switching.
+re-prints the current state, by default as two lines:
+
+```text
+Http:1A2B3C…
+clash
+```
+
+When direct, the first line is `Direct` (no fingerprint):
+
+```text
+Direct
+home
+```
+
+(the `Comment` may be empty, in which case the second line is blank.)
+
+With `--json`:
+
+```json
+{
+  "Fingerprint": "1A2B3C…",
+  "Type": "Http",
+  "Comment": "clash"
+}
+```
+
+(`Type` and `Fingerprint` are `null` when direct.)
 
 ### Advanced usage
 
-Use `from-json` for full control — e.g. chaining two proxies (`NextHop`), or setting DNS proxy / localhost-bypass flags. It maps to the `Proxy` record in [`src/NixDaemonProxy.Interface/Proxy.cs`](src/NixDaemonProxy.Interface/Proxy.cs), with `ProxyType` being one of `Http`, `Socks4` or `Socks5`. `Comment` is a required string field — use `""` for an unlabelled proxy:
+Use `from-json` for full control — e.g. chaining two proxies (`NextHop`), or setting DNS proxy / localhost-bypass flags. It maps to a `CommentedProxy` (a `Proxy` plus a `Comment`) — see [`src/NixDaemonProxy.Interface`](src/NixDaemonProxy.Interface), with `ProxyType` being one of `Http`, `Socks4` or `Socks5`. Every field is required (nullable ones too — write them as `null`), and no extra fields are allowed. Set `Proxy` to `null` to switch to direct:
 
 ```sh
 NixDaemonProxy.Client from-json <<'EOF'
 {
-  "Comment": "a two-hop chain",
-  "ProxyType": "Http",
-  "HostName": "192.168.1.2",
-  "Port": 7890,
-  "UserName": null,
-  "Password": null,
-  "ProxyDnsRequests": true,
-  "BypassLocalhost": false,
-  "NextHop": {
-    "Comment": "still required, but only the top-level comment is shown",
+  "Proxy": {
     "ProxyType": "Http",
-    "HostName": "192.168.1.3",
+    "HostName": "192.168.1.2",
     "Port": 7890,
-    "UserName": "user",
-    "Password": "secret",
+    "UserName": null,
+    "Password": null,
     "ProxyDnsRequests": true,
-    "BypassLocalhost": true,
-    "NextHop": null
-  }
+    "BypassLocalhost": false,
+    "NextHop": {
+      "ProxyType": "Http",
+      "HostName": "192.168.1.3",
+      "Port": 7890,
+      "UserName": "user",
+      "Password": "secret",
+      "ProxyDnsRequests": true,
+      "BypassLocalhost": true,
+      "NextHop": null
+    }
+  },
+  "Comment": "a two-hop chain"
 }
 EOF
 ```
@@ -269,11 +278,11 @@ EOF
 
 | Command | Options | Description |
 | --- | --- | --- |
-| `http` | `-H <host>`, `-P <port>`, `-u <user>`, `-p <password>`, `--[no-]proxy-dns-requests`, `--bypass-localhost`, `--comment <text>`, `--dry-run`, `--control-socket <path>` | Use an HTTP(S) proxy upstream |
+| `http` | `-H <host>`, `-P <port>`, `-u <user>`, `-p <password>`, `--proxy-dns-requests`, `--bypass-localhost`, `--comment <text>`, `--dry-run`, `--json`, `--control-socket <path>` | Use an HTTP(S) proxy upstream |
 | `socks5` | same as `http` | Use a SOCKS5 proxy upstream |
-| `direct` | `--control-socket <path>` | Remove the upstream proxy (go direct) |
-| `from-json` | `--dry-run`, `--control-socket <path>` | Read a JSON `Proxy` record from stdin and set it as the upstream (supports `NextHop` chains) |
-| `current` | `--control-socket <path>` | Print the current upstream fingerprint as JSON |
+| `direct` | `--comment <text>`, `--json`, `--control-socket <path>` | Remove the upstream proxy (go direct), optionally with a comment |
+| `from-json` | `--dry-run`, `--json`, `--control-socket <path>` | Read a JSON `CommentedProxy` from stdin and set it as the upstream (supports `NextHop` chains) |
+| `status` | `--json`, `--control-socket <path>` | Print the current state (`Type`/fingerprint on one line, `Comment` on the next), or JSON with `--json` |
 
 Shared options (each can also be supplied via its environment variable; the command line takes precedence):
 
@@ -283,8 +292,9 @@ Shared options (each can also be supplied via its environment variable; the comm
 - `--password` / `-p`: upstream proxy password (optional). Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_PASSWORD`.
 - `--proxy-dns-requests` (default `true`): let the proxy resolve DNS instead of the local machine. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_PROXY_DNS_REQUESTS`.
 - `--bypass-localhost` (default `false`): do not proxy requests to localhost. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_BYPASS_LOCALHOST`.
-- `--comment <text>`: free-form label attached to the proxy (shown by `current`; never treated as a secret). Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_COMMENT`.
-- `--dry-run`: compute and print the fingerprint without actually switching (`http` / `socks5` / `from-json` only). Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_DRY_RUN`.
+- `--comment <text>`: free-form label attached to the current upstream — `direct` included (shown by `status`; never treated as a secret). Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_COMMENT`.
+- `--dry-run`: compute and print the resulting state without actually switching (`http` / `socks5` / `from-json` only). Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_DRY_RUN`.
+- `--json`: print the state as JSON instead of the plain two-line form. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_JSON`.
 - `--control-socket` (default `/run/nix-daemon-proxy.sock`): path of the server's control socket, in case it was changed. Environment variable: `NIX_DAEMON_PROXY_ARGUMENT_CONTROL_SOCKET`.
 
 ## Rescue: proxy switched but not working
