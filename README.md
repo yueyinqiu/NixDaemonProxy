@@ -242,16 +242,16 @@ Use `from-json` for full control — e.g. chaining two proxies (`NextHop`), or s
 ```sh
 NixDaemonProxy.Client from-json <<'EOF'
 {
-  "Comment": "",
-  "ProxyType": "Socks5",
+  "Comment": "a two-hop chain",
+  "ProxyType": "Http",
   "HostName": "192.168.1.2",
-  "Port": 1080,
+  "Port": 7890,
   "UserName": null,
   "Password": null,
   "ProxyDnsRequests": true,
   "BypassLocalhost": false,
   "NextHop": {
-    "Comment": "",
+    "Comment": "still required, but only the top-level comment is shown",
     "ProxyType": "Http",
     "HostName": "192.168.1.3",
     "Port": 7890,
