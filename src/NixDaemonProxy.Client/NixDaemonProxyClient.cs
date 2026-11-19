@@ -1,59 +1,63 @@
+using System.Diagnostics;
 using System.Net.Http.Json;
-using System.Text.Json;
-using CliFx;
-using CliFx.Infrastructure;
 using NixDaemonProxy.Interface;
 
 namespace NixDaemonProxy.Client;
 
 internal sealed class NixDaemonProxyClient(string controlSocket)
 {
-    public async Task<ProxyFingerprint?> SwitchAsync(
-        Proxy? proxy,
+    public async Task<ProxyStatus> SwitchAsync(
+        CommentedProxy proxy,
         CancellationToken cancellationToken = default
     )
     {
         using var client = UnixSocketHttpClient.Create(controlSocket);
-        using var content = JsonContent.Create(proxy, ProxyJsonSerializerContext.Default.Proxy);
+        using var content = JsonContent.Create(proxy, CommentedProxyJsonSerializerContext.Default.CommentedProxy);
         using var response = await client.PostAsync("switch", content, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync(
+        var fingerprint = await response.Content.ReadFromJsonAsync(
             ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint,
             cancellationToken
         );
+        Trace.Assert(fingerprint is not null);
+        return new ProxyStatus(
+            fingerprint.Fingerprint,
+            proxy.Proxy?.ProxyType,
+            proxy.Comment
+        );
     }
 
-    public async Task<ProxyFingerprint?> FingerprintAsync(
-        Proxy? proxy,
+    public async Task<ProxyStatus> FingerprintAsync(
+        CommentedProxy proxy,
         CancellationToken cancellationToken = default
     )
     {
         using var client = UnixSocketHttpClient.Create(controlSocket);
-        using var content = JsonContent.Create(proxy, ProxyJsonSerializerContext.Default.Proxy);
+        using var content = JsonContent.Create(proxy.Proxy, ProxyJsonSerializerContext.Default.Proxy);
         using var response = await client.PostAsync("fingerprint", content, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync(
+        var fingerprint = await response.Content.ReadFromJsonAsync(
             ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint,
             cancellationToken
         );
+        Trace.Assert(fingerprint is not null);
+        return new ProxyStatus(
+            fingerprint.Fingerprint,
+            proxy.Proxy?.ProxyType,
+            proxy.Comment
+        );
     }
 
-    public async Task<ProxyFingerprint?> CurrentAsync(CancellationToken cancellationToken = default)
+    public async Task<ProxyStatus> StatusAsync(CancellationToken cancellationToken = default)
     {
         using var client = UnixSocketHttpClient.Create(controlSocket);
-        using var response = await client.PostAsync("current", null, cancellationToken);
+        using var response = await client.PostAsync("status", null, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync(
-            ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint,
+        var result = await response.Content.ReadFromJsonAsync(
+            ProxyStatusJsonSerializerContext.Default.ProxyStatus,
             cancellationToken
         );
-    }
-
-    public string Serialize(ProxyFingerprint? status)
-    {
-        return JsonSerializer.Serialize(
-            status,
-            ProxyFingerprintJsonSerializerContext.Default.ProxyFingerprint
-        );
+        Trace.Assert(result is not null);
+        return result;
     }
 }
