@@ -1,3 +1,10 @@
+# ⚠️ This repository is no longer maintained
+
+NixDaemonProxy bundled the proxy with root-level system management (writing the `nix-daemon` drop-in, restarting it, managing socket ownership), so the server had to run as root. It has been superseded by a privilege-free proxy plus a separate systemd integration:
+
+- [ProxySwitchboard](https://github.com/yueyinqiu/ProxySwitchboard) — the proxy server/client, generalized and no longer tied to `nix-daemon`.
+- [NixDaemonProxySwitchboard](https://github.com/yueyinqiu/NixDaemonProxySwitchboard) — the NixOS module that wires ProxySwitchboard into `nix-daemon`.
+
 # NixDaemonProxy
 
 Switch the proxy used by the **Nix daemon** (`nix-daemon`) on the fly, without rebuilding your NixOS configuration or editing `/etc` by hand.
